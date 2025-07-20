@@ -1,38 +1,39 @@
+import allure
 import pytest
-import requests
+from methods.courier_methods import CourierMethods
+from data.data import LoginCourier
 
-BASE_URL = "https://qa-scooter.praktikum-services.ru/api/v1/courier"
+courier = CourierMethods()
 
-
+@allure.title("Курьер может авторизоваться с валидными данными")
 def test_courier_can_login(new_courier):
     login_data = {
         "login": new_courier["login"],
         "password": new_courier["password"]
     }
-    response = requests.post(f"{BASE_URL}/login", json=login_data)
-    assert response.status_code == 200
-    json_response = response.json()
-    assert "id" in json_response, f"Ответ не содержит id: {json_response}"
+    status, body = courier.login_courier(login_data)
+
+    with allure.step("Проверяем, что код ответа 200 и есть id в теле"):
+        assert status == 200
+        assert "id" in body
 
 
-
-@pytest.mark.parametrize("login_data", [
-    {"login": "", "password": "pass"},
-    {"login": "login", "password": ""},
-    {"login": "", "password": ""}
-])
+@allure.title("Авторизация без обязательных полей должна завершаться ошибкой")
+@pytest.mark.parametrize("login_data", LoginCourier.login_with_missing_fields())
 def test_login_missing_required_fields(login_data):
-    response = requests.post(f"{BASE_URL}/login", json=login_data)
-    assert response.status_code == 400
-    assert "message" in response.json()
-    assert "Недостаточно данных" in response.json()["message"]
+    status, body = courier.login_courier(login_data)
+
+    with allure.step("Проверяем, что код 400 и сообщение содержит 'Недостаточно данных'"):
+        assert status == 400
+        assert "message" in body
+        assert "Недостаточно данных" in body["message"]
 
 
+@allure.title("Авторизация с несуществующим логином/паролем должна завершаться ошибкой")
 def test_login_with_wrong_credentials():
-    login_data = {
-        "login": "nonexistent",
-        "password": "wrongpass"
-    }
-    response = requests.post(f"{BASE_URL}/login", json=login_data)
-    assert response.status_code == 404 or response.status_code == 400
-    assert "message" in response.json()
+
+    status, body = courier.login_courier(LoginCourier.non_exist_account())
+
+    with allure.step("Проверяем, что код 404 или 400 и есть сообщение об ошибке"):
+        assert status in (400, 404)
+        assert "message" in body
