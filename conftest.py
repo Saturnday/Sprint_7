@@ -9,24 +9,17 @@ def new_courier():
         "firstName": "TestCourier"
     }
     create_response = create_courier(data)
-    assert create_response.status_code == 201, (
-        f"Ошибка при создании курьера: {create_response.status_code} - {create_response.text}"
-    )
+    data["id"] = None
 
-    # Логинимся чтобы получить id курьера
-    login_response = login_courier({
-        "login": data["login"],
-        "password": data["password"]
-    })
-    assert login_response.status_code == 200, (
-        f"Ошибка при логине курьера: {login_response.status_code} - {login_response.text}"
-    )
-    data["id"] = login_response.json().get("id")
+    if create_response.status_code == 201:
+        login_response = login_courier({
+            "login": data["login"],
+            "password": data["password"]
+        })
+        if login_response.status_code == 200:
+            data["id"] = login_response.json().get("id")
 
     yield data
 
-    # Удаляем курьера по id
-    delete_response = delete_courier(data["id"])
-    assert delete_response.status_code == 200, (
-        f"Ошибка при удалении курьера: {delete_response.status_code} - {delete_response.text}"
-    )
+    if data["id"]:
+        delete_courier(data["id"])

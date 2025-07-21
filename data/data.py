@@ -4,6 +4,9 @@ BASE_URL = 'https://qa-scooter.praktikum-services.ru/api/v1/'
 COURIER_URL = 'courier/'
 ORDER_URL = 'orders/'
 
+EXPECTED_DUPLICATE_LOGIN_ERROR = "Этот логин уже используется"
+EXPECTED_MISSING_FIELD_ERROR = "Недостаточно данных для создания учетной записи"
+
 class CreateCourier:
 
     @staticmethod
